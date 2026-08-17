@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blood Registry</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF8F4;
+    --paper-dim:#F1EEE7;
+    --ink:#1E1C1B;
+    --ink-soft:#5B5652;
+    --crimson:#A3182B;
+    --crimson-dark:#7A1020;
+    --sage:#3E5C52;
+    --sage-bg:#E7EEE9;
+    --amber:#B4762A;
+    --amber-bg:#F3E9D9;
+    --line:#E2DCD1;
+    --card:#FFFFFF;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .display{font-family:'Barlow Condensed',sans-serif;letter-spacing:0.01em;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+
+  .wrap{max-width:1100px;margin:0 auto;padding:28px 20px 80px;}
+
+  /* Header */
+  header{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:20px;
+    padding-bottom:22px;
+    border-bottom:2px solid var(--ink);
+    margin-bottom:26px;
+    flex-wrap:wrap;
+  }
+  .brand{display:flex;align-items:center;gap:14px;}
+  .drop-mark{width:38px;height:44px;flex-shrink:0;}
+  h1{
+    font-size:44px;
+    font-weight:700;
+    line-height:0.9;
+    margin:0;
+    text-transform:uppercase;
+  }
+  .tagline{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-top:4px;
+  }
+  .stats{display:flex;gap:22px;}
+  .stat{text-align:right;}
+  .stat .num{font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:700;line-height:1;color:var(--crimson);}
+  .stat.avail .num{color:var(--sage);}
+  .stat .lbl{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-soft);}
+
+  /* Layout */
+  .layout{display:grid;grid-template-columns:220px 1fr;gap:24px;}
+  @media (max-width:760px){ .layout{grid-template-columns:1fr;} }
+
+  /* Blood type filter rail */
+  .rail{position:sticky;top:16px;align-self:start;}
+  .rail h3{font-size:12px;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-soft);margin:0 0 10px;font-family:'Inter';font-weight:600;}
+  .type-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:22px;}
+  .type-tag{
+    border:1.5px solid var(--ink);
+    border-radius:8px;
+    padding:8px 6px;
+    text-align:center;
+    cursor:pointer;
+    background:var(--card);
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:14px;
+    user-select:none;
+    transition:transform .12s ease;
+  }
+  .type-tag:hover{transform:translateY(-1px);}
+  .type-tag.active{background:var(--ink);color:var(--paper);}
+  .type-tag.all{grid-column:1/3;}
+
+  .toggle-row{display:flex;flex-direction:column;gap:6px;margin-bottom:22px;}
+  .toggle-btn{
+    text-align:left;
+    padding:9px 10px;
+    border-radius:8px;
+    border:1.5px solid var(--line);
+    background:var(--card);
+    cursor:pointer;
+    font-size:13px;
+    font-weight:500;
+  }
+  .toggle-btn.active{border-color:var(--sage);background:var(--sage-bg);color:var(--sage);font-weight:600;}
+
+  .search-box{
+    width:100%;
+    padding:10px 12px;
+    border-radius:8px;
+    border:1.5px solid var(--line);
+    background:var(--card);
+    font-size:13px;
+    margin-bottom:22px;
+  }
+
+  .add-btn{
+    width:100%;
+    padding:12px;
+    background:var(--crimson);
+    color:#fff;
+    border:none;
+    border-radius:8px;
+    font-family:'Barlow Condensed',sans-serif;
+    font-size:18px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.02em;
+    cursor:pointer;
+  }
+  .add-btn:hover{background:var(--crimson-dark);}
+
+  /* Cards */
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:14px;align-content:start;}
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .badge{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:15px;
+    color:#fff;
+    background:var(--crimson);
+    border-radius:6px;
+    padding:4px 9px;
+    flex-shrink:0;
+  }
+  .name{font-size:19px;font-weight:600;margin:0;line-height:1.2;}
+  .field{font-size:13px;color:var(--ink-soft);display:flex;gap:6px;}
+  .field .k{color:var(--ink);font-weight:500;min-width:16px;}
+  .avail-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:12px;
+    font-weight:600;
+    padding:4px 9px;
+    border-radius:20px;
+    width:fit-content;
+  }
+  .avail-pill.yes{background:var(--sage-bg);color:var(--sage);}
+  .avail-pill.no{background:var(--amber-bg);color:var(--amber);}
+  .avail-pill svg{width:9px;height:9px;}
+  .card-actions{display:flex;gap:8px;margin-top:2px;}
+  .card-actions button{
+    flex:1;
+    padding:6px 8px;
+    font-size:12px;
+    border-radius:6px;
+    border:1px solid var(--line);
+    background:var(--paper-dim);
+    cursor:pointer;
+    font-weight:500;
+  }
+  .card-actions button.del{color:var(--crimson);}
+
+  .empty{
+    grid-column:1/-1;
+    text-align:center;
+    padding:60px 20px;
+    color:var(--ink-soft);
+  }
+  .empty .drop-mark{margin:0 auto 14px;opacity:.35;}
+
+  /* Modal */
+  .overlay{
+    position:fixed;inset:0;background:rgba(30,28,27,0.45);
+    display:none;align-items:center;justify-content:center;z-index:50;padding:16px;
+  }
+  .overlay.open{display:flex;}
+  .modal{
+    background:var(--paper);
+    border-radius:16px;
+    width:100%;max-width:420px;
+    padding:26px;
+    max-height:90vh;
+    overflow-y:auto;
+  }
+  .modal h2{font-family:'Barlow Condensed';text-transform:uppercase;font-size:26px;margin:0 0 16px;}
+  .form-row{margin-bottom:14px;}
+  .form-row label{display:block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-soft);margin-bottom:5px;}
+  .form-row input, .form-row select, .form-row textarea{
+    width:100%;
+    padding:10px 11px;
+    border:1.5px solid var(--line);
+    border-radius:8px;
+    font-size:14px;
+    font-family:'Inter';
+    background:#fff;
+  }
+  .form-row textarea{resize:vertical;min-height:54px;}
+  .avail-switch{display:flex;gap:8px;margin-top:4px;}
+  .avail-switch button{
+    flex:1;padding:9px;border-radius:8px;border:1.5px solid var(--line);background:#fff;cursor:pointer;font-size:13px;font-weight:600;
+  }
+  .avail-switch button.sel-yes{border-color:var(--sage);background:var(--sage-bg);color:var(--sage);}
+  .avail-switch button.sel-no{border-color:var(--amber);background:var(--amber-bg);color:var(--amber);}
+  .modal-actions{display:flex;gap:10px;margin-top:18px;}
+  .modal-actions button{flex:1;padding:11px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;}
+  .btn-cancel{background:var(--paper-dim);color:var(--ink);border:1.5px solid var(--line) !important;}
+  .btn-save{background:var(--crimson);color:#fff;}
+
+  .banner{
+    background:var(--paper-dim);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:10px 14px;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-bottom:20px;
+  }
+  .banner b{color:var(--ink);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <svg class="drop-mark" viewBox="0 0 38 44" fill="none">
+        <path d="M19 2C19 2 3 20 3 29.5C3 38.06 10.16 43 19 43C27.84 43 35 38.06 35 29.5C35 20 19 2 19 2Z" fill="#A3182B"/>
+      </svg>
+      <div>
+        <h1>Blood Registry</h1>
+        <div class="tagline">A directory of donors, ready to be found when it matters.</div>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="num" id="statTotal">0</div><div class="lbl">Donors</div></div>
+      <div class="stat avail"><div class="num" id="statAvail">0</div><div class="lbl">Available</div></div>
+    </div>
+  </header>
+
+  <div class="banner">This registry is <b>shared</b> — anyone using this app can view and add donors. Don't include information you don't want others to see.</div>
+
+  <div class="layout">
+    <div class="rail">
+      <h3>Blood Type</h3>
+      <div class="type-grid" id="typeGrid"></div>
+
+      <h3>Status</h3>
+      <div class="toggle-row">
+        <button class="toggle-btn active" data-avail="all">All donors</button>
+        <button class="toggle-btn" data-avail="yes">Available now</button>
+      </div>
+
+      <h3>Search</h3>
+      <input class="search-box" id="searchBox" placeholder="Name, phone, or address…">
+
+      <button class="add-btn" id="openAdd">+ Add Donor</button>
+    </div>
+
+    <div>
+      <div class="cards" id="cards"></div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2 id="modalTitle">Add Donor</h2>
+    <form id="donorForm">
+      <div class="form-row">
+        <label>Full name</label>
+        <input type="text" id="fName" required>
+      </div>
+      <div class="form-row">
+        <label>Phone / contact</label>
+        <input type="text" id="fPhone" required>
+      </div>
+      <div class="form-row">
+        <label>Address</label>
+        <textarea id="fAddress"></textarea>
+      </div>
+      <div class="form-row">
+        <label>Blood group</label>
+        <select id="fGroup" required>
+          <option value="">Select…</option>
+          <option>A+</option><option>A-</option>
+          <option>B+</option><option>B-</option>
+          <option>AB+</option><option>AB-</option>
+          <option>O+</option><option>O-</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Availability</label>
+        <div class="avail-switch">
+          <button type="button" id="btnYes" class="sel-yes">Available</button>
+          <button type="button" id="btnNo">Not available</button>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" id="cancelBtn">Cancel</button>
+        <button type="submit" class="btn-save">Save donor</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const GROUPS = ["A+","A-","B+","B-","AB+","AB-","O+","O-"];
+const STORE_KEY = "donors";
+let donors = [];
+let filterGroup = "ALL";
+let filterAvail = "all";
+let searchTerm = "";
+let editingId = null;
+let availSelection = true;
+
+const typeGrid = document.getElementById('typeGrid');
+const cardsEl = document.getElementById('cards');
+const overlay = document.getElementById('overlay');
+
+function buildTypeGrid(){
+  typeGrid.innerHTML = `<div class="type-tag all active" data-g="ALL">All</div>` +
+    GROUPS.map(g=>`<div class="type-tag" data-g="${g}">${g}</div>`).join('');
+  typeGrid.querySelectorAll('.type-tag').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      filterGroup = el.dataset.g;
+      typeGrid.querySelectorAll('.type-tag').forEach(e=>e.classList.remove('active'));
+      el.classList.add('active');
+      render();
+    });
+  });
+}
+buildTypeGrid();
+
+document.querySelectorAll('.toggle-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    filterAvail = btn.dataset.avail;
+    document.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    render();
+  });
+});
+
+document.getElementById('searchBox').addEventListener('input', (e)=>{
+  searchTerm = e.target.value.trim().toLowerCase();
+  render();
+});
+
+function uid(){ return 'd_' + Date.now() + '_' + Math.random().toString(36).slice(2,8); }
+
+async function loadDonors(){
+  try{
+    const res = await window.storage.get(STORE_KEY, true);
+    donors = res && res.value ? JSON.parse(res.value) : [];
+  }catch(e){
+    donors = [];
+  }
+  render();
+}
+
+async function saveDonors(){
+  try{
+    await window.storage.set(STORE_KEY, JSON.stringify(donors), true);
+  }catch(e){
+    console.error('Storage error', e);
+  }
+}
+
+function pillSvg(){
+  return `<svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="currentColor"/></svg>`;
+}
+
+function render(){
+  let list = donors.filter(d=>{
+    if(filterGroup !== "ALL" && d.group !== filterGroup) return false;
+    if(filterAvail === "yes" && !d.available) return false;
+    if(searchTerm){
+      const hay = (d.name+' '+d.phone+' '+d.address).toLowerCase();
+      if(!hay.includes(searchTerm)) return false;
+    }
+    return true;
+  });
+
+  document.getElementById('statTotal').textContent = donors.length;
+  document.getElementById('statAvail').textContent = donors.filter(d=>d.available).length;
+
+  if(list.length === 0){
+    cardsEl.innerHTML = `<div class="empty">
+      <svg class="drop-mark" viewBox="0 0 38 44" fill="none" style="width:34px;height:40px;">
+        <path d="M19 2C19 2 3 20 3 29.5C3 38.06 10.16 43 19 43C27.84 43 35 38.06 35 29.5C35 20 19 2 19 2Z" fill="#1E1C1B"/>
+      </svg>
+      <div class="display" style="font-size:20px;text-transform:uppercase;">No donors match</div>
+      <div style="font-size:13px;margin-top:4px;">Try a different filter, or add the first donor.</div>
+    </div>`;
+    return;
+  }
+
+  cardsEl.innerHTML = list.map(d=>`
+    <div class="card">
+      <div class="card-top">
+        <p class="name">${escapeHtml(d.name)}</p>
+        <span class="badge">${d.group}</span>
+      </div>
+      <div class="field mono"><span class="k">☎</span> ${escapeHtml(d.phone)}</div>
+      ${d.address ? `<div class="field"><span class="k">⌂</span> ${escapeHtml(d.address)}</div>` : ''}
+      <span class="avail-pill ${d.available ? 'yes':'no'}">${pillSvg()} ${d.available ? 'Available' : 'Not available'}</span>
+      <div class="card-actions">
+        <button class="edit" data-id="${d.id}">Edit</button>
+        <button class="del" data-id="${d.id}">Remove</button>
+      </div>
+    </div>
+  `).join('');
+
+  cardsEl.querySelectorAll('.edit').forEach(b=>b.addEventListener('click', ()=>openEdit(b.dataset.id)));
+  cardsEl.querySelectorAll('.del').forEach(b=>b.addEventListener('click', ()=>removeDonor(b.dataset.id)));
+}
+
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function openModal(){ overlay.classList.add('open'); }
+function closeModal(){ overlay.classList.remove('open'); document.getElementById('donorForm').reset(); editingId=null; setAvail(true); }
+
+document.getElementById('openAdd').addEventListener('click', ()=>{
+  document.getElementById('modalTitle').textContent = 'Add Donor';
+  editingId = null;
+  document.getElementById('donorForm').reset();
+  setAvail(true);
+  openModal();
+});
+document.getElementById('cancelBtn').addEventListener('click', closeModal);
+overlay.addEventListener('click', (e)=>{ if(e.target===overlay) closeModal(); });
+
+function setAvail(v){
+  availSelection = v;
+  document.getElementById('btnYes').classList.toggle('sel-yes', v);
+  document.getElementById('btnNo').classList.toggle('sel-no', !v);
+}
+document.getElementById('btnYes').addEventListener('click', ()=>setAvail(true));
+document.getElementById('btnNo').addEventListener('click', ()=>setAvail(false));
+
+function openEdit(id){
+  const d = donors.find(x=>x.id===id);
+  if(!d) return;
+  editingId = id;
+  document.getElementById('modalTitle').textContent = 'Edit Donor';
+  document.getElementById('fName').value = d.name;
+  document.getElementById('fPhone').value = d.phone;
+  document.getElementById('fAddress').value = d.address || '';
+  document.getElementById('fGroup').value = d.group;
+  setAvail(d.available);
+  openModal();
+}
+
+async function removeDonor(id){
+  donors = donors.filter(d=>d.id!==id);
+  await saveDonors();
+  render();
+}
+
+document.getElementById('donorForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const name = document.getElementById('fName').value.trim();
+  const phone = document.getElementById('fPhone').value.trim();
+  const address = document.getElementById('fAddress').value.trim();
+  const group = document.getElementById('fGroup').value;
+  if(!name || !phone || !group) return;
+
+  if(editingId){
+    const d = donors.find(x=>x.id===editingId);
+    Object.assign(d, {name, phone, address, group, available: availSelection});
+  }else{
+    donors.push({id:uid(), name, phone, address, group, available: availSelection});
+  }
+  await saveDonors();
+  closeModal();
+  render();
+});
+
+loadDonors();
+</script>
+</body>
+</html>
